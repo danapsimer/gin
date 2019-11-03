@@ -35,6 +35,14 @@ func TestMappingBaseTypes(t *testing.T) {
 		{"base type", struct{ F bool }{}, "True", true},
 		{"base type", struct{ F float32 }{}, "9.1", float32(9.1)},
 		{"base type", struct{ F float64 }{}, "9.1", float64(9.1)},
+		{"base type", struct{ F complex64 }{}, "9.1+5i", complex64(complex(9.1,5.0))},
+		{"base type", struct{ F complex128 }{}, "9.1+5i", complex(9.1,5.0)},
+		{"base type", struct{ F complex128 }{}, "5i", complex(0,5.0)},
+		{"base type", struct{ F complex128 }{}, "9.1+-5i", complex(9.1,-5.0)},
+		{"base type", struct{ F complex128 }{}, "-5i", complex(0,-5.0)},
+		{"base type", struct{ F complex128 }{}, "9.1", complex(9.1,0.0)},
+		{"base type", struct{ F complex128 }{}, "9.1e2+5i", complex(9.1e2,5.0)},
+		{"base type", struct{ F complex128 }{}, "9.1e2+5e3i", complex(9.1e2,5.0e3)},
 		{"base type", struct{ F string }{}, "test", string("test")},
 		{"base type", struct{ F *int }{}, "9", intPtr(9)},
 
@@ -43,6 +51,7 @@ func TestMappingBaseTypes(t *testing.T) {
 		{"zero value", struct{ F uint }{}, "", uint(0)},
 		{"zero value", struct{ F bool }{}, "", false},
 		{"zero value", struct{ F float32 }{}, "", float32(0)},
+		{"zero value", struct{ F complex128 }{}, "", complex(0,0)},
 	} {
 		tp := reflect.TypeOf(tt.value)
 		testName := tt.name + ":" + tp.Field(0).Type.String()

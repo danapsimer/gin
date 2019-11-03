@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -201,6 +202,10 @@ func setWithProperType(val string, value reflect.Value, field reflect.StructFiel
 		return setFloatField(val, 32, value)
 	case reflect.Float64:
 		return setFloatField(val, 64, value)
+	case reflect.Complex64:
+		return setComplexField(val, 64, value)
+	case reflect.Complex128:
+		return setComplexField(val, 128, value)
 	case reflect.String:
 		value.SetString(val)
 	case reflect.Struct:
@@ -257,6 +262,41 @@ func setFloatField(val string, bitSize int, field reflect.Value) error {
 	floatVal, err := strconv.ParseFloat(val, bitSize)
 	if err == nil {
 		field.SetFloat(floatVal)
+	}
+	return err
+}
+
+// digits: [0-9]+
+// fp: ([+-]?)\d+\.\d+)?(e[+-]?\d+)?
+// cmpx: ([+-]?)\d+\.\d+)?(e[+-]?\d+)?[+-]([+-]?)\d+\.\d+)?(e[+-]?\d+)?
+
+var complexRegex = regexp.MustCompile("")
+
+func setComplexField(val string, bitSize int, field reflect.Value) error {
+	if val == "" {
+		val = "0.0"
+	}
+	floatBitSize := bitSize / 2
+	var r, i float64
+	var err error
+	additionIdx := strings.Index(val, "+")
+	if (additionIdx != -1) {
+		rstr := strings.TrimSpace(val[:additionIdx])
+		istr := strings.TrimSpace(val[additionIdx+1:])
+		if istr[len(istr)-1:] != "i" {
+			err = fmt.Errorf("invalid complex number format: %s", val)
+		}
+		r, err = strconv.ParseFloat(rstr, floatBitSize)
+		if err == nil {
+			i, err = strconv.ParseFloat(istr[:len(istr)-1], floatBitSize)
+		}
+	} else if val[len(val)-1:] == "i" {
+		i, err = strconv.ParseFloat(val[:len(val)-1], floatBitSize)
+	} else {
+		r, err = strconv.ParseFloat(val, floatBitSize)
+	}
+	if err == nil {
+		field.SetComplex(complex(r, i))
 	}
 	return err
 }
